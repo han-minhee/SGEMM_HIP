@@ -8,7 +8,7 @@ Here's the steps that worked for me
 2. Install CMake 3.30.3 from the [Kitware repository](https://apt.kitware.com/)
 3. Add the [ROCm repository](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/native-install/ubuntu.html), and **don't install rocm**.
 4. `sudo apt install hip-runtime-nvidia hip-dev` 
-5. Get [hipBLAS](https://github.com/ROCm/hipBLAS/releases/tag/rocm-6.2.0) and install it via running `./install.sh -i`. It will install hipblas inside `/opt/rocm/hipblas`
+5. Get [hipBLAS](https://github.com/ROCm/hipBLAS/releases/tag/rocm-6.2.0) and install it via running `./install.sh -i`. It will install hipblas inside `/opt/rocm/hipblas`. When using the library, don't link the library using `-lhipblas` and manually link `/opt/rocm/hipblas/libhipblas.so` file.  
 6. Set below values for `~/.bashrc` or your shell configuration file
 ```bash
 export PATH=$PATH:/opt/rocm/bin
