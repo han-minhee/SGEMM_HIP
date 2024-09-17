@@ -1,6 +1,8 @@
 # HIP SGEMM Kernels for NVIDIA/AMD GPUs
 A HIP port from the [CUDA version](https://github.com/siboehm/SGEMM_CUDA) and [the original repo](https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE) with some modifications. 
 
+**HIP kernels codes are actually almost identical to CUDA kernels, so I barely touched the kernel codes.**
+
 ## Overview
 
 GFLOPs at matrix size 4096x4096:
