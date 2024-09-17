@@ -22,7 +22,7 @@ export HIP_COMPILER=nvcc
 export HIP_RUNTIME=cuda
 ```
 
-### Errors realted to CMake / Environment Variables.
+### Errors Related to CMake / Environment Variables.
 Below are the error messages I've faced, in case someone's experiencing same problems. They were mostly related to the old CMake version included in the default system packages or setting the environment variables. **I also experienced the issue of hipcc treating `--cuda-gpu-arch` like `--offload-arch` as mentioned on the [the issue report](https://github.com/ROCm/HIP/issues/3479#issuecomment-2305038649)**. I don't know which caused which as I didn't throughly tested each setting.
 
 ```
@@ -62,7 +62,7 @@ CMake Error at /usr/share/cmake-3.30/Modules/CMakeTestHIPCompiler.cmake:73 (mess
   CMake will not be able to correctly generate this project.
 ```
 
-### Errors related to hipBLAS Library
+### Errors Related to hipBLAS Library
 It also yielded some errors related to not being able to find hipblas when it is properly installed and registered to ldconfig. Or, when I manually linked the libhipblas.so file, it was compiled but also gave the error that the hipblas functions were undefined. The related errors was gone when I installed hipblas manually.
 
 ```
