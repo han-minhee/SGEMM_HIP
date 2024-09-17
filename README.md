@@ -23,7 +23,7 @@ GFLOPs at matrix size 4096x4096:
 | 0: hipBLAS                          |    19731.5 | 100.0%                            |
 | 10: Warptiling                      |    22355   | 113.3%                            |
 
-#### Test Results on an NVIDIA RTX 4060 Laptop:
+#### Test Results on an NVIDIA RTX 4060 Laptop (sm89, TGP 55W):
 ![](RTX4060Laptop_benchmark_results.png)
 | Kernel                              |   GFLOPs/s | Performance relative to hipBLAS   |
 |:------------------------------------|-----------:|:----------------------------------|
