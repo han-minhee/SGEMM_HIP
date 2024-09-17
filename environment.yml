@@ -1,0 +1,10 @@
+name: SGEMM_HIP
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - black
+  - cmake
+  - matplotlib
+  - seaborn
+  - tabulate
