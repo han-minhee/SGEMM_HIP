@@ -2,22 +2,20 @@ cmake_minimum_required(VERSION 3.19)
 project(HIP_SGEMM_PRACTICE LANGUAGES CXX HIP)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(ROCM_ROOT
         "/opt/rocm"
         CACHE PATH
         "Root directory of the ROCm installation"
     )
+set(CMAKE_CXX_COMPILER "${ROCM_ROOT}/bin/hipcc")
 
 list(APPEND CMAKE_PREFIX_PATH "${ROCM_ROOT}")
-
-set(CMAKE_C_COMPILER "${ROCM_ROOT}/bin/hipcc")
-set(CMAKE_CXX_COMPILER "${ROCM_ROOT}/bin/hipcc")
-set(CMAKE_HIP_COMPILER "${ROCM_ROOT}/bin/nvcc")
-
 set(CMAKE_MODULE_PATH "/opt/rocm/hip/cmake" ${CMAKE_MODULE_PATH})
 find_package(hip REQUIRED)
 
-# set(CMAKE_CXX_STANDARD 17)
 
 set(HIP_COMPILE_OPTIONS "")
 set(ROCM_TARGET_DEVICE "" CACHE STRING "AMD GPU target architecture")
@@ -25,6 +23,7 @@ set(CUDA_TARGET_ARCH "" CACHE STRING "NVIDIA GPU target architecture")
 
 if(ROCM_TARGET_DEVICE)
     message(STATUS "Compiling for AMD GPU with target architecture: ${ROCM_TARGET_DEVICE}")
+    add_definitions(-DCMAKE_HIP_COMPILER="${ROCM_ROOT}/bin/hipcc")
     list(APPEND HIP_COMPILE_OPTIONS --offload-arch=${ROCM_TARGET_DEVICE})
 endif()
 
