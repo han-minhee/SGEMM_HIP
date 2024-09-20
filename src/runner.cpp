@@ -127,9 +127,11 @@ void runHipBlasFP32(hipblasHandle_t handle, int M, int N, int K, float alpha,
 void run_sgemm_naive(int M, int N, int K, float alpha, float *A, float *B,
                      float beta, float *C)
 {
-  dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32));
-  dim3 blockDim(32, 32);
+  dim3 gridDim(CEIL_DIV(M, 64), CEIL_DIV(N, 64));
+  dim3 blockDim(64, 64);
   hipLaunchKernelGGL(sgemm_naive, gridDim, blockDim, 0, 0, M, N, K, alpha, A, B, beta, C);
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 // void run_sgemm_naive_occupancy(int M, int N, int K, float alpha, float *A, float *B,
@@ -161,7 +163,6 @@ void run_sgemm_naive(int M, int N, int K, float alpha, float *A, float *B,
 //     hipLaunchKernelGGL(sgemm_naive, gridDim, blockDim, 0, 0, M, N, K, alpha, A, B, beta, C);
 // }
 
-
 void run_sgemm_coalesce(int M, int N, int K, float alpha, float *A, float *B,
                         float beta, float *C)
 {
@@ -169,24 +170,30 @@ void run_sgemm_coalesce(int M, int N, int K, float alpha, float *A, float *B,
   dim3 blockDim(32 * 32);
   sgemm_global_mem_coalesce<32>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
+/// FIXME: cudaSharedmemCarveoutMaxShared equivalence is not defined in HIP
+
+// L1 cache becomes useless, since we access GMEM only via SMEM, so we carve
+// out all of L1 to SMEM. This doesn't currently make a difference, since
+// occupancy is limited by reg and thread count, but it's good to do anyway.
+// cudaFuncSetAttribute(sgemm_shared_mem_block<32>,
+//                      cudaFuncAttributePreferredSharedMemoryCarveout,
+//                      cudaSharedmemCarveoutMaxShared);
 void run_sgemm_shared_mem_block(int M, int N, int K, float alpha, float *A,
                                 float *B, float beta, float *C)
 {
-  dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32));
-  dim3 blockDim(32 * 32);
-
-  /// FIXME: cudaSharedmemCarveoutMaxShared equivalence is not defined in HIP
-
-  // L1 cache becomes useless, since we access GMEM only via SMEM, so we carve
-  // out all of L1 to SMEM. This doesn't currently make a difference, since
-  // occupancy is limited by reg and thread count, but it's good to do anyway.
-  // cudaFuncSetAttribute(sgemm_shared_mem_block<32>,
-  //                      cudaFuncAttributePreferredSharedMemoryCarveout,
-  //                      cudaSharedmemCarveoutMaxShared);
-  sgemm_shared_mem_block<32>
+  constexpr int BLOCKSIZE = 32; // Change to whatever block size you're testing
+  dim3 gridDim(CEIL_DIV(M, BLOCKSIZE), CEIL_DIV(N, BLOCKSIZE));
+  dim3 blockDim(BLOCKSIZE * BLOCKSIZE);
+  sgemm_shared_mem_block<BLOCKSIZE>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 void runSgemm1DBlocktiling(int M, int N, int K, float alpha, float *A, float *B,
@@ -200,6 +207,8 @@ void runSgemm1DBlocktiling(int M, int N, int K, float alpha, float *A, float *B,
   dim3 blockDim((BM * BN) / TM);
   sgemm1DBlocktiling<BM, BN, BK, TM>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 void runSgemm2DBlocktiling(int M, int N, int K, float alpha, float *A, float *B,
@@ -228,6 +237,9 @@ void runSgemm2DBlocktiling(int M, int N, int K, float alpha, float *A, float *B,
     sgemm2DBlocktiling<BM, BN, BK, TM, TN>
         <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
   }
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 void runSgemmVectorize(int M, int N, int K, float alpha, float *A, float *B,
@@ -256,6 +268,9 @@ void runSgemmVectorize(int M, int N, int K, float alpha, float *A, float *B,
     sgemmVectorize<BM, BN, BK, TM, TN>
         <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
   }
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 void runSgemmResolveBankConflicts(int M, int N, int K, float alpha, float *A,
@@ -284,6 +299,9 @@ void runSgemmResolveBankConflicts(int M, int N, int K, float alpha, float *A,
     sgemmResolveBankConflicts<BM, BN, BK, TM, TN>
         <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
   }
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 void runSgemmResolveBankExtraCol(int M, int N, int K, float alpha, float *A,
@@ -312,6 +330,9 @@ void runSgemmResolveBankExtraCol(int M, int N, int K, float alpha, float *A,
     sgemmResolveBankExtraCol<BM, BN, BK, TM, TN>
         <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
   }
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 // A100
@@ -385,6 +406,9 @@ void runSgemmAutotuned(int M, int N, int K, float alpha, float *A, float *B,
   dim3 gridDim(CEIL_DIV(N, K9_BN), CEIL_DIV(M, K9_BM));
   sgemmAutotuned<K9_BM, K9_BN, K9_BK, K9_TM, K9_TN, K9_NUM_THREADS>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 // Settings for A100
@@ -489,6 +513,9 @@ void runSgemmWarptiling(int M, int N, int K, float alpha, float *A, float *B,
   sgemmWarptiling<K10_BM, K10_BN, K10_BK, K10_WM, K10_WN, K10_WNITER, K10_TM,
                   K10_TN, K10_NUM_THREADS>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+
+  hipCheck(hipGetLastError(), __FILE__, __LINE__);
+  hipCheck(hipDeviceSynchronize(), __FILE__, __LINE__);
 }
 
 void run_kernel(int kernel_num, int M, int N, int K, float alpha, float *A,
@@ -529,10 +556,8 @@ void run_kernel(int kernel_num, int M, int N, int K, float alpha, float *A,
   case 10:
     runSgemmWarptiling(M, N, K, alpha, A, B, beta, C);
     break;
-  // case 11:
-  //   run_sgemm_naive_occupancy(M, N, K, alpha, A, B, beta, C);
-  //   break;
   default:
     throw std::invalid_argument("Unknown kernel number");
   }
+  
 }
